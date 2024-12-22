@@ -1,49 +1,62 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main(){
     char r='y';
-    char audi[5][5]={"ks","apjd"};
-    int capacities[5]={600,150};
-    int available[5];
-    char arr[10][10];
+    char audi[5][5]={"ks","apjd","apjb"};
+    int cap[5]={600,150,200};
+    char avail[5][5];
+    char arr[5][5];
     while(r=='y'){
-        printf("Required Seats: ");
-        scanf("%d",&arr[4]);
+        printf("Required Seats: \n>>>");
+        scanf("%s",&arr[0]);
         for(int i=0;i<5;i++){
-            if(capacities[i]<=arr){
-                available[sizeof(available)/sizeof(available[0])]=audi[i];
+            if(cap[i]<=atoi(arr[0])){
+                strcpy(avail[sizeof(avail)/sizeof(avail[0])],audi[i]);
             }
         }
-        input(arr);
-        char filename="";
-        strcat(filename,arr[0]);
-        strcat(filename,".csv");
-        FILE *fp = fopen(filename,"r");
-        if(fp==NULL){//checking if the file exists
-            FILE *fpn = fopen(filename,"a");
-            fprintf(fpn,"%s,%d,%d,%d\n",arr[0],arr[1],arr[2]);
-            fcloseall();
-        }else{
-            if(checkavail(arr[0],arr[1],arr[2],arr[3],fp)==0){
-                printf("\nAn event already exists in the calendar.");
-                printf("\nDo you want to continue booking?(y/n): ");
-                scanf("%c",&r);
+        m:printf("Available Auditoriums: \n");
+        for(int i=0;i<sizeof(avail)/sizeof(avail[0]);i++){
+            if(avail[i]!=""){
+                printf("%d. %s\n",i,avail[i]);
             }
-            else{
-                char line[]="";
-                strcat(line,arr[0]);
-                strcat(line,",");
-                strcat(line,arr[1]);
-                strcat(line,",");
-                strcat(line,arr[2]);
-                strcat(line,"\n");
-                fputs(line,fp);
-            }
+        }
+        printf("Select Auditorium: \n>>>");
+        scanf("%s",&arr[1]);
+        if(arr[2]||arr[3]){
+            goto n;
+        }
+        else{
+            input(&arr);
+        }
+        int f=0;
+        n:search(arr[1],arr,&avail,&f);
+        if(f==1){
+            printf("Enter your Contact No: \n>>>");
+            scanf("%s",&arr[5]);
+            FILE fp = openfile(arr[4],arr[1],"a");
+            char line[]="";
+            strcat(line,arr[2]);
+            strcat(line,",");
+            strcat(line,arr[3]);
+            strcat(line,",");
+            strcat(line,arr[5]);
+            strcat(line,"\n");
+            fputs(line,&fp);
+            printf("\nYour booking is successful.\n\n");
+            printf("Do you want to continue booking?(y/n)\n>>>");
+            scanf("%c",&r);
+        }
+        else{
+            printf("Selected Auditorium is not available.\n\n");
+            printf("Do you want to continue booking?(y/n)\n>>>");
+            scanf("%c",&r);
+            goto m;
         }
     }
 }
+
 void input(char *arr[10][10]){
     char day[2],month[2],year[4],starttime[5],endtime[5];
     int starttime,endtime,a,lines,i;
@@ -59,45 +72,49 @@ void input(char *arr[10][10]){
     printf("\nEnter your end time in hhmm format: ");
     scanf("%s",&endtime);
     //defining date variable to check for file names with it.
-    char filename[12]=day,date[8];
-    strcat(filename,"/");
-    strcat(filename,month);
-    strcat(filename,"/");
-    strcat(filename,year);
-    strcpy(date,filename);
-    *arr[0]=date;
-    *arr[1]=starttime;
-    *arr[2]=endtime;
-    *arr[3]=itoa(a);
+    char date[8]=day;
+    strcat(date,"/");
+    strcat(date,month);
+    strcat(date,"/");
+    strcat(date,year);
+    *arr[4]=date;
+    *arr[2]=starttime;
+    *arr[3]=endtime;
 }
 FILE openfile(char date,char audi[5],char mode){
-    char filename[12]=audi;
+    char filename[12]=".\\";
+    strcat(filename,audi);
     strcat(filename,"\\");
     strcat(filename,date);
     strcat(filename,".csv");
     FILE *fp=fopen(filename,mode);
     return *fp;
 }
-int checkavail(char date,int starttime,int endtime,int audi,FILE *fp){
-    int i,ret;
-    char ch;
-    char data[sizeof(*fp)];
-    char sdata[20][20];
-    while(fgets(data,1,fp)){
-        char *token = strtok(data,",");
-        i=0;
-        while(token!=NULL){
-            strcpy(sdata[i],token);
-            token = strtok(NULL,",");
-            i++;
-        }
-        if((strcmp(sdata[0],date)&&(!(starttime>=sdata[2]||endtime<=sdata[1]) && (int)sdata[3]==audi))){
-            ret = 0;
+void search(char audi[5],char arr[5][5],char*avail[5][5],int*f){
+    for(int i=0;i<5;i++){
+        FILE fp = openfile(arr[4],avail[i],"r");
+        if(&fp==NULL&&(strcmp(*avail[i],audi)==0)){
+            *f=1;
             break;
         }
-        else{
-            ret=1;
+        int j,ret;
+        char ch;
+        char data[sizeof(fp)];
+        char sdata[20][20];
+        if(strcmp(*avail[i],"")!=0){
+            while(fgets(data,1,&fp)){
+                char *token = strtok(data,",");
+                j=0;
+                while(token!=NULL){
+                    strcpy(sdata[i],token);
+                    token = strtok(NULL,",");
+                    j++;
+                }
+                if(!(arr[2]>=sdata[0]||arr[3]<=sdata[1])){
+                    strcpy(*avail[i],"");
+                    break;
+                }
+            }
         }
     }
-    return ret;
 }
